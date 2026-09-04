@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capacitance Dilatometry Processor — Install &amp; User Guide</title>
+<style>
+  :root { --fg:#1a1a1a; --bg:#ffffff; --accent:#0b5394; --soft:#f4f6f8;
+          --border:#d0d7de; --warn-bg:#fff8e6; --warn-bd:#e6c34a;
+          --ok-bg:#eef8ee; --ok-bd:#5aa05a; --code:#f6f8fa; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg:#e6e6e6; --bg:#161a1e; --accent:#7db3e8; --soft:#20262c;
+            --border:#3a434c; --warn-bg:#3a331a; --warn-bd:#a8912f;
+            --ok-bg:#1e2f1e; --ok-bd:#4e7d4e; --code:#22272e; }
+  }
+  html { scroll-behavior:smooth; }
+  body { font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         color:var(--fg); background:var(--bg); margin:0; line-height:1.55; }
+  .wrap { max-width:900px; margin:0 auto; padding:2rem 1.2rem 4rem; }
+  h1 { font-size:1.7rem; border-bottom:2px solid var(--accent); padding-bottom:.4rem; }
+  h2 { font-size:1.25rem; color:var(--accent); margin-top:2.4rem;
+       border-bottom:1px solid var(--border); padding-bottom:.25rem; }
+  h3 { font-size:1.05rem; margin-top:1.6rem; }
+  code, pre { font-family:"SF Mono",Consolas,"Cascadia Code",Menlo,monospace;
+              font-size:.88em; }
+  code { background:var(--code); padding:.12em .35em; border-radius:4px; }
+  pre { background:var(--code); border:1px solid var(--border); border-radius:6px;
+        padding: .8em 1em; overflow-x:auto; }
+  pre code { background:none; padding:0; }
+  table { border-collapse:collapse; width:100%; margin:1em 0; font-size:.93em; }
+  th, td { border:1px solid var(--border); padding:.45em .6em; text-align:left;
+           vertical-align:top; }
+  th { background:var(--soft); }
+  .box { border-radius:6px; padding:.7em 1em; margin:1em 0; }
+  .warn { background:var(--warn-bg); border:1px solid var(--warn-bd); }
+  .ok   { background:var(--ok-bg);   border:1px solid var(--ok-bd); }
+  .toc { background:var(--soft); border:1px solid var(--border); border-radius:6px;
+         padding:1em 1.4em; }
+  .toc ol { margin:.4em 0; padding-left:1.2em; }
+  a { color:var(--accent); }
+  .kbd { border:1px solid var(--border); border-bottom-width:2px; border-radius:4px;
+         padding:0 .35em; background:var(--soft); font-size:.85em; }
+  .flow { border-left:3px solid var(--accent); padding-left:1em; margin:1em 0; }
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>Capacitance Dilatometry Processor<br>
+<small>for Quantum Design PPMS® systems — offline install &amp; user guide</small></h1>
+
+<p>This guide covers installing the processor on <strong>offline / corporate
+Windows and macOS machines</strong> under several environments, and walks
+through every user workflow: GUI reduction, headless batch runs, the
+interactive quality-control (QC) window, multi-angle (rotation) series, and
+building a calibration for your own dilatometer cell.</p>
+
+<div class="toc">
+<strong>Contents</strong>
+<ol>
+  <li><a href="#whats-in">What is in this folder</a></li>
+  <li><a href="#install">Installation
+    <ol type="a">
+      <li><a href="#inst-win-none">Windows, no Python installed (fully offline)</a></li>
+      <li><a href="#inst-mac-none">macOS, no Python installed (fully offline)</a></li>
+      <li><a href="#inst-conda">Machine with conda / Anaconda</a></li>
+      <li><a href="#inst-venv">Machine that already has Python 3.12</a></li>
+      <li><a href="#inst-check">Check the install</a></li>
+    </ol></a></li>
+  <li><a href="#concepts">How the processor works (2 minutes)</a></li>
+  <li><a href="#flow-gui">Workflow 1 — GUI: reduce one run and inspect it</a></li>
+  <li><a href="#flow-str">Workflow 2 — headless str-cell reduction</a></li>
+  <li><a href="#flow-mini">Workflow 3 — mini-cell rotation series</a></li>
+  <li><a href="#flow-qc">Workflow 4 — the interactive QC window</a></li>
+  <li><a href="#flow-cal">Workflow 5 — calibrate your own cell</a></li>
+  <li><a href="#flow-audit">Workflow 6 — wrong plate radius? (plate-constant audit)</a></li>
+  <li><a href="#outputs">Understanding the outputs</a></li>
+  <li><a href="#trouble">Troubleshooting</a></li>
+  <li><a href="#license">License &amp; citation</a></li>
+</ol>
+</div>
+
+<h2 id="whats-in">1. What is in this folder</h2>
+<table>
+<tr><th>Path</th><th>Contents</th></tr>
+<tr><td><code>app/</code></td><td>The processor itself (<code>app/scripts/</code>) plus README, LICENSE, CITATION.</td></tr>
+<tr><td><code>wheels/win_amd64/</code></td><td>All Python dependencies as wheels for <strong>Windows x64, Python 3.12</strong>.</td></tr>
+<tr><td><code>wheels/macos_arm64/</code></td><td>The same for <strong>Apple-silicon macOS, Python 3.12</strong>.</td></tr>
+<tr><td><code>python_installers/</code></td><td>Official python.org <strong>3.12.10</strong> installers for Windows and macOS (tkinter included). <code>SHA256SUMS.txt</code> for verification.</td></tr>
+<tr><td><code>environment.yml</code></td><td>Conda environment definition (for machines with conda).</td></tr>
+<tr><td><code>INSTALL.md</code>, <code>GUIDE.html</code></td><td>Short install notes / this guide.</td></tr>
+</table>
+<div class="box warn"><strong>Wheels are Python-3.12-specific.</strong> If you
+install a different Python version, pip will refuse the bundled wheels. Use the
+bundled 3.12.10 installers, or conda with <code>python=3.12</code>.</div>
+
+<h2 id="install">2. Installation</h2>
+
+<h3 id="inst-win-none">2a. Windows, no Python installed (fully offline)</h3>
+<ol>
+<li>Run <code>python_installers\python-3.12.10-amd64.exe</code>.</li>
+<li>On the first screen <strong>tick “Add python.exe to PATH”</strong>, then
+    “Install Now”.</li>
+<li>Open <em>Command Prompt</em>, <code>cd</code> into this folder, and install
+    the dependencies from the local wheels (no network is used):
+<pre><code>py -3.12 -m pip install --no-index --find-links wheels\win_amd64 -r app\scripts\requirements.txt</code></pre></li>
+<li>Start the app:
+<pre><code>py -3.12 app\scripts\dilat_app.py</code></pre></li>
+</ol>
+<p>If your user account cannot install software, choose “Customize
+installation” → untick “Install for all users”; the per-user install needs no
+admin rights.</p>
+
+<h3 id="inst-mac-none">2b. macOS, no Python installed (fully offline)</h3>
+<ol>
+<li>Run <code>python_installers/python-3.12.10-macos11.pkg</code> (double-click,
+    follow the installer). It installs <code>python3.12</code> with tkinter.</li>
+<li>Open <em>Terminal</em>, <code>cd</code> into this folder:
+<pre><code>python3.12 -m pip install --no-index --find-links wheels/macos_arm64 -r app/scripts/requirements.txt
+python3.12 app/scripts/dilat_app.py</code></pre></li>
+</ol>
+<div class="box warn"><strong>Intel Macs:</strong> the bundled wheels are
+Apple-silicon only. On an Intel Mac use conda (2c), or prepare a
+<code>macosx_x86_64</code> wheel folder on any online machine:
+<code>pip download -r app/scripts/requirements.txt --only-binary=:all:
+--platform macosx_10_13_x86_64 --python-version 3.12 -d wheels/macos_x86_64</code>.</div>
+
+<h3 id="inst-conda">2c. Machine with conda / Anaconda (typical corporate setup)</h3>
+<p>If conda can reach its channels (directly or via a corporate proxy/mirror):</p>
+<pre><code>conda env create -f environment.yml
+conda activate dilatometry
+python app/scripts/dilat_app.py</code></pre>
+<p>If conda is <strong>fully offline</strong>, let conda provide only the
+interpreter (3.12 is usually cached or on the corporate mirror) and install the
+science stack from the bundled wheels:</p>
+<pre><code>conda create -n dilatometry python=3.12
+conda activate dilatometry
+pip install --no-index --find-links wheels/win_amd64 -r app/scripts/requirements.txt</code></pre>
+<p>(<code>wheels/macos_arm64</code> on a Mac.) Conda’s Python already includes
+tkinter.</p>
+
+<h3 id="inst-venv">2d. Machine that already has Python 3.12</h3>
+<p>Keep the install isolated in a virtual environment:</p>
+<pre><code># Windows
+py -3.12 -m venv dilat-env
+dilat-env\Scripts\activate
+pip install --no-index --find-links wheels\win_amd64 -r app\scripts\requirements.txt
+
+# macOS
+python3.12 -m venv dilat-env
+source dilat-env/bin/activate
+pip install --no-index --find-links wheels/macos_arm64 -r app/scripts/requirements.txt</code></pre>
+<div class="box warn">A Python built by Homebrew/pyenv may lack tkinter
+(<code>python3.12 -m tkinter</code> opens a test window if it is present). The
+python.org and conda interpreters always have it.</div>
+
+<h3 id="inst-check">2e. Check the install</h3>
+<pre><code>python -c "import numpy, pandas, scipy, matplotlib, tkinter; print('all good')"</code></pre>
+<p>Then <code>python app/scripts/dilat_app.py</code> — a window titled
+<em>“Dilatometry Processor”</em> must open, showing
+“No file selected — Browse…” at the Run button.</p>
+
+<h2 id="concepts">3. How the processor works (2 minutes)</h2>
+<p>Raw input is a PPMS <code>.dat</code> export (tab-delimited; a comma-separated
+<code>*_all.csv</code> archive of the same columns is also accepted — its
+pre-computed columns are ignored and everything is recomputed from the raw
+<code>T</code>, <code>C&nbsp;[pF]</code>, <code>δl</code> columns). The pipeline:</p>
+<ol>
+<li><strong>Separate</strong> the record into temperature sweeps and field
+    (magnetostriction) loops.</li>
+<li><strong>Subtract the empty-cell background</strong> from
+    <code>calibrations.json</code> — branch-aware: cooling segments get the
+    cooling calibration, warming segments the warming one.</li>
+<li><strong>Compute</strong> ΔL/L₀ referenced to the lowest temperature
+    (Küchler RSI 2016, Eq. 6), plus α(T) and λ(B) per loop.</li>
+<li><strong>Gate</strong> the result (glitch scan, paramagnetic-α sign,
+    cool/warm consistency…) and write CSV + PNG + a
+    <code>_provenance.json</code> that records every decision.</li>
+</ol>
+<div class="box warn"><strong>The shipped <code>calibrations.json</code> is an
+example from the authors’ cells.</strong> Quantitative results for your own
+dilatometer require your own empty-cell calibration —
+see <a href="#flow-cal">Workflow 5</a>.</div>
+
+<h2 id="flow-gui">4. Workflow 1 — GUI: reduce one run and inspect it</h2>
+<div class="flow">
+<p><strong>Step 1 — open a file.</strong> <span class="kbd">Browse…</span>
+(or <span class="kbd">Cmd/Ctrl-O</span>) and pick a raw <code>.dat</code> or a
+<code>*_all.csv</code> archive.</p>
+<p><strong>Step 2 — detect the cell.</strong> The app fits the plate constant
+from the file’s (C, δl) pairs and pre-selects <em>standard/stress cell</em> or
+<em>mini cell</em>. Check the suggestion; you can override it. Enter the sample
+thickness L₀ (mm) — the “Run will use:” line under the Run button always states
+exactly what the next run will do (note: batch Run reads L₀ from the reducer’s
+configuration, not from this field; the field is honored when opening QC).</p>
+<p><strong>Output resolution (optional).</strong> Two fields on the parameter
+row control how many points land in the exported figures <em>and</em> CSVs, and
+they <em>are</em> applied to the batch Run:</p>
+<ul>
+<li><b>α bin (K)</b> — the α(T) coefficient is computed in temperature bins;
+this is the bin width. Smaller → more α points but noisier; larger → fewer,
+smoother. Default 3 K. (α is a derivative, so it is always binned — that is why
+<code>_alpha.csv</code> has far fewer rows than <code>_Tdep_clean.csv</code>.)</li>
+<li><b>ΔL/L₀ spacing (K)</b> — thin the thermal-expansion output to roughly one
+point per this many kelvin. Leave <b>blank</b> to keep every point (full
+resolution, the default); set e.g. 2 or 5 to get a lighter figure and a smaller
+CSV.</li>
+</ul>
+<p><strong>Step 3 — Run.</strong>
+<em>Standard/stress cell:</em> reduces the selected file.
+<em>Mini cell:</em> reduces the <strong>whole angle series</strong> described by
+the <code>angle_runs.json</code> in the data folder (the app asks for
+confirmation first, since this sweeps the folder).</p>
+<p><strong>Step 4 — results table.</strong> Each reduced run appears with a
+status: <code>PASS</code> = quality gates met · <code>CHECK</code> = a gate
+failed, inspect in QC · <code>PRELIM</code> = mini run, gates advisory ·
+<code>ERR</code> = unreadable. Select a row and press
+<span class="kbd">Open QC</span> to inspect it interactively
+(<a href="#flow-qc">Workflow 4</a>).</p>
+</div>
+
+<h2 id="flow-str">5. Workflow 2 — headless str-cell reduction</h2>
+<pre><code>python app/scripts/reduce_str_batch.py \
+    --data /path/to/folder --file myrun.dat \
+    --L0 0.058 --transition 177</code></pre>
+<table>
+<tr><th>Option</th><th>Meaning</th></tr>
+<tr><td><code>--data</code>, <code>--file</code></td><td>Folder and filename of the raw run.</td></tr>
+<tr><td><code>--L0</code></td><td>Sample thickness along the measurement axis, in <strong>cm</strong>.</td></tr>
+<tr><td><code>--transition</code></td><td>Optional transition temperature (K): drawn on figures and used to split the magnetostriction panels into below/above-transition.</td></tr>
+</table>
+<p>The console prints each gate (<code>GATE … PASS/FAIL</code>); the exit code is
+non-zero when an enforced gate fails, so the reducer can sit in shell scripts.
+Outputs are named after the input file:
+<code>Output/str/&lt;stem&gt;_Tdep_clean.csv</code>, <code>…_Bdep_clean.csv</code>,
+<code>…_alpha.csv</code>, PNGs, and <code>…_provenance.json</code>.</p>
+
+<h2 id="flow-mini">6. Workflow 3 — mini-cell rotation series</h2>
+<p>Describe the series once in an <code>angle_runs.json</code> placed
+<strong>in the data folder</strong> (or passed via <code>--runs</code>):</p>
+<pre><code>{"stem": "MYSAMPLE_mini",
+ "L0_cm": 0.02,
+ "transition_K": 100.0,
+ "runs": [
+   {"angle_deg": 0,   "tag": "rot0",    "glob": "*rot0*.dat"},
+   {"angle_deg": 45,  "tag": "plus45",  "glob": "*plus45*.dat"},
+   {"angle_deg": 90,  "tag": "plus90",  "glob": "*plus90*.dat"},
+   {"angle_deg": -45, "tag": "minus45", "glob": "*minus45*.dat", "rescale": 1.0}
+ ]}</code></pre>
+<table>
+<tr><th>Key</th><th>Meaning</th></tr>
+<tr><td><code>stem</code></td><td>Prefix of all output filenames.</td></tr>
+<tr><td><code>L0_cm</code></td><td>Sample thickness (cm), applies to every angle.</td></tr>
+<tr><td><code>transition_K</code></td><td>Optional transition line on the figures.</td></tr>
+<tr><td><code>runs[].glob</code></td><td>Filename pattern matching exactly one file per angle.</td></tr>
+<tr><td><code>runs[].rescale</code></td><td>Optional raw-δl factor for a run converted with the wrong plate radius (<a href="#flow-audit">Workflow 6</a>). Omit otherwise.</td></tr>
+</table>
+<pre><code>python app/scripts/reduce_mini_batch.py --data /path/to/folder</code></pre>
+<p>Per-angle outputs (like Workflow 2) plus, with ≥2 angles, a combined
+temperature-dependence overlay, and with ≥3 angles, polar anisotropy figures
+(ΔL/L₀ and λ(B<sub>max</sub>) vs angle, 2-fold mirrored — colliding mirror nodes
+are averaged and the disagreement printed to the console as a symmetry check).</p>
+<div class="box warn"><strong>Mini runs are never step-stitched.</strong>
+Jump-and-recovery staircases below a magnetic transition can be
+domain-avalanche / remanence <em>signal</em>; stitching would rectify them into
+fake drift. This is deliberate and not configurable from the command line.</div>
+
+<h2 id="flow-qc">7. Workflow 4 — the interactive QC window</h2>
+<pre><code>python app/scripts/qc_str_cell.py  --data /path/to/folder --file myrun.dat --thickness 0.058
+python app/scripts/qc_mini_cell.py --data /path/to/folder --glob "*mini*.dat" --thickness 0.02</code></pre>
+<p>(or simply <span class="kbd">Open QC</span> on a results row in the GUI).
+The window shows every separated curve of the run with per-curve controls:</p>
+<table>
+<tr><th>Control</th><th>What it does</th></tr>
+<tr><td>Curve selector (right panel)</td><td>Pick a curve; with many curves the list scrolls — the mouse wheel scrolls it, the counter shows e.g. “5–16 / 18”.</td></tr>
+<tr><td><code>Curve: on/OFF</code></td><td>Include or exclude the selected curve from the export.</td></tr>
+<tr><td><code>View: clean/RAW</code></td><td>Toggle between cleaned data and the raw points behind them.</td></tr>
+<tr><td><code>Legend: on/off</code></td><td>Show/hide the legend.</td></tr>
+<tr><td>Trim sliders</td><td>Cut settling tails at either end of the selected curve.</td></tr>
+<tr><td>Smooth slider</td><td>Rolling-median window for the displayed curve.</td></tr>
+<tr><td><code>Drop δl below [1e-6 cm]</code></td><td>Threshold filter on raw δl (plate-touch spikes).</td></tr>
+<tr><td>Save / export</td><td>Writes the cleaned CSVs + figures with your selections applied.</td></tr>
+</table>
+<p>Everything you exclude or trim is recorded, so an exported dataset remains
+auditable.</p>
+
+<h2 id="flow-cal">8. Workflow 5 — calibrate your own cell</h2>
+<p>You need one or more <strong>empty-cell runs with a Cu (copper) sample</strong>
+of known thickness, covering the temperature range you measure in, ideally both
+cooling and warming at the same rates you use for samples.</p>
+<ol>
+<li>Put the Cu run(s) where the builder can see them and run:
+<pre><code>python app/scripts/cu_calibration_builder.py --help</code></pre>
+    The builder segments each run into cooling/warming branches, repairs
+    instrumental steps, fits polynomial backgrounds per branch, decomposes them
+    into the Küchler Eq.-(7) length model (so a background can be
+    <em>virtualized</em> at your actual sample thickness), and runs internal
+    round-trip gates before writing <code>calibrations.json</code>.</li>
+<li>Replace <code>app/scripts/calibrations.json</code> with your registry.</li>
+<li>Reduce a Cu run <em>as if it were a sample</em> — the result should be flat
+    at the 10⁻⁵ level. That is your end-to-end check.</li>
+</ol>
+<p>Per-branch overrides (exclude a glitchy window, drop a branch) go into
+<code>calibration_config.json</code> — the file documents its own format.</p>
+
+<h2 id="flow-audit">9. Workflow 6 — wrong plate radius? (plate-constant audit)</h2>
+<p>PPMS converts capacitance to δl with a configured plate radius. If a run was
+recorded with the wrong one (e.g. the 7&nbsp;mm default instead of a mini cell’s
+5&nbsp;mm), its δl is scaled by a constant factor. To detect this, list your
+files in <code>FILES</code> at the top of
+<code>app/scripts/plate_constant_audit.py</code> and run it: it inverts the
+Pott–Schefzyk gap relation per file and prints the implied plate radius.
+r&nbsp;≈&nbsp;7&nbsp;mm on a mini-cell run means wrong conversion — fix it by
+setting that run’s <code>"rescale"</code> in <code>angle_runs.json</code> to
+<code>K_correct / K_fitted</code> (the ratio the audit prints).</p>
+
+<h2 id="outputs">10. Understanding the outputs</h2>
+<table>
+<tr><th>File</th><th>Contents</th></tr>
+<tr><td><code>*_Tdep_clean.csv</code></td><td>Thermal expansion: T, B, ΔL/L₀, branch (cool/warm), curve label. Header lines starting with <code>#</code> carry the provenance — read with <code>pandas.read_csv(path, comment='#')</code>.</td></tr>
+<tr><td><code>*_Bdep_clean.csv</code></td><td>Magnetostriction loops: λ(B) per loop temperature; str runs carry both the stitched column and <code>lambda_raw_dL_L0</code> (unstitched) so every correction is reversible.</td></tr>
+<tr><td><code>*_alpha.csv</code></td><td>Linear expansion coefficient α(T) (binned derivative).</td></tr>
+<tr><td><code>*_provenance.json</code></td><td>The full decision record: source file, L₀ and its source, calibration records used per branch, gate results, excluded rows, per-loop stitch lists. <strong>Read this first when a result surprises you.</strong></td></tr>
+</table>
+<p><strong>Units:</strong> T in K; B in T; raw δl in 10⁻⁶ cm; L₀ in cm in code
+(mm in the GUI); ΔL/L₀ dimensionless (figures ×10⁻³); α in 10⁻⁶ K⁻¹.</p>
+
+<h2 id="trouble">11. Troubleshooting</h2>
+<table>
+<tr><th>Symptom</th><th>Cause / fix</th></tr>
+<tr><td><code>pip … no matching distribution</code> during offline install</td><td>Python version is not 3.12, or wrong wheels folder for the OS/CPU. Check <code>python --version</code> and the <code>--find-links</code> path.</td></tr>
+<tr><td><code>ModuleNotFoundError: _tkinter</code></td><td>The interpreter was built without Tk (common for Homebrew/pyenv). Use the bundled python.org installer or conda.</td></tr>
+<tr><td>GUI opens but Run is greyed out</td><td>No file selected — use Browse… The “Run will use:” line explains the current state.</td></tr>
+<tr><td>Can’t see the Results table / <b>Open QC</b> / <b>Plot pre-cleanup</b> buttons</td><td>On a small or display-scaled screen the window is taller than the screen. The whole form scrolls — use the scrollbar on the right or the mouse wheel to reach the lower sections, or drag the window taller. (The window also opens no taller than your screen.)</td></tr>
+<tr><td><code>PermissionError … Output/…png</code></td><td>The app couldn’t write results inside its own folder (read-only or policy-locked install, e.g. a managed Mac blocking <code>~/Downloads</code>). Results now go to a <code>dilat_output/</code> folder <b>next to your data file</b> by default; the log prints “Output → …”. If even that is blocked they fall back to <code>~/dilatometry_output</code>. Put your data somewhere you can write, or move the app out of a locked folder.</td></tr>
+<tr><td><code>no recognizable PPMS dilatometry columns</code></td><td>The file is not a PPMS export (needs <code>T PPMS [K]</code>, <code>C [pF]</code>, <code>delta l [1E-6 cm]</code>). Wrong file, or wrong export mode in the PPMS software.</td></tr>
+<tr><td><code>no angle-run spec</code> from the mini reducer</td><td>Create an <code>angle_runs.json</code> in the data folder (<a href="#flow-mini">Workflow 3</a>).</td></tr>
+<tr><td><code>pattern … matched []</code> or matched several files</td><td>The <code>glob</code> of that angle must match exactly one file — make it more/less specific.</td></tr>
+<tr><td>Gate <code>paramagnetic alpha … FAIL</code></td><td>α is negative where it should be flat/positive: usually a wrong L₀, a wrong calibration record, or a wrongly-converted run (<a href="#flow-audit">Workflow 6</a>). Check the provenance JSON.</td></tr>
+<tr><td>Polar figures missing</td><td>They need ≥3 angles sharing a temperature window; the console says so explicitly.</td></tr>
+<tr><td>Results look shifted between cooling and warming</td><td>Expected at the 10⁻⁴ level (cell hysteresis) — the calibration is branch-aware, but a single-branch calibration registry cannot correct the other branch. Record both branches when calibrating.</td></tr>
+</table>
+
+<h2 id="license">12. License &amp; citation</h2>
+<p>MIT — free for any use, including commercial, provided the copyright notice
+and the permission notice travel with the software (<code>app/LICENSE</code>).
+If the software contributes to a
+publication, cite it (<code>app/CITATION.cff</code>) together with the
+dilatometer-design papers: R.&nbsp;Küchler <em>et&nbsp;al.</em>, Rev. Sci.
+Instrum. <strong>83</strong>, 095102 (2012); <strong>87</strong>, 073903 (2016);
+<strong>88</strong>, 083903 (2017).</p>
+
+<p style="margin-top:3rem; font-size:.85em; color:gray;">
+Guide built 2026-07-07 · matches app/scripts as bundled in this folder ·
+author: Volodymyr Buturlim (ORCID 0000-0001-8851-2489)</p>
+
+</div></body>
+</html>

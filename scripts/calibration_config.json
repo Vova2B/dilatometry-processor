@@ -1,0 +1,16 @@
+{
+  "_doc": "Per-branch overrides for cu_calibration_builder.py. Key = <filekey>/c<cycle><w|c>. Fields: manual_jump_rows (row index within branch), exclude_T_windows [[T1,T2],...], use (false = keep in QC plots but never fit as calibration).",
+
+  "str_1mm_350K/c1c": {
+    "_note": "start-of-run transient right after reaching 350 K",
+    "exclude_T_windows": [[344.0, 351.0]]
+  },
+  "str_1mm_350K/c3w": {
+    "_note": "glitchy oscillating end region seen in segmentation; auto window detection misses it because residuals keep crossing zero. Steps auto-detected inside are un-stitched by the transient rule.",
+    "exclude_T_windows": [[272.0, 301.0]]
+  },
+  "mini_2mm/c2c": {
+    "_note": "partial re-cooling offset ~-25e-6 cm from c1c with its own steps - suspect mechanical shift after first cycle; QC/hysteresis use only",
+    "use": false
+  }
+}

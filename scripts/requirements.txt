@@ -1,0 +1,6 @@
+numpy>=1.24
+pandas>=2.0
+scipy>=1.10
+# <4 pin: the QC curve selector touches RadioButtons internals (guarded,
+# degrades gracefully) validated on the 3.7-3.10 series
+matplotlib>=3.7,<4

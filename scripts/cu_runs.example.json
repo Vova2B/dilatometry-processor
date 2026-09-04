@@ -1,0 +1,44 @@
+{
+ "_doc": "Worked cu_runs.json example: the exact Cu reference runs behind the shipped calibrations.json (the authors' dilatometers). Copy this next to YOUR Cu .dat files as cu_runs.json, replace paths/keys/cells/lengths with your runs, then: python3 scripts/cu_calibration_builder.py --data <that folder>. Format: module docstring of cu_calibration_builder.py.",
+ "runs": [
+  {"key": "str_0.42mm", "path": "Cu_0.42mm_str_dil.dat - -.dat",
+   "cell": "str_dil", "cu_length_mm": 0.42, "t_max": 300},
+  {"key": "str_1mm", "path": "Cu_1mm_str_dil.dat - .dat",
+   "cell": "str_dil", "cu_length_mm": 1.0, "t_max": 300},
+  {"key": "str_1mm_350K", "path": "Cu_str_dil_1mm_350K - .dat",
+   "cell": "str_dil", "cu_length_mm": 1.0, "t_max": 350},
+  {"key": "mini_1mm", "path": "Cu_1mm_mini_dil - .dat",
+   "cell": "mini_dil", "cu_length_mm": 1.0, "t_max": 300},
+  {"key": "mini_2mm", "path": "Cu_2mm_mini_dil.dat - .dat",
+   "cell": "mini_dil", "cu_length_mm": 2.0, "t_max": 300},
+  {"key": "field_1mm", "path": "Cu_field_1_mm - .dat",
+   "cell": "str_dil", "cu_length_mm": 1.0, "t_max": 300, "kind": "field"}
+ ],
+ "transfer_pairs": [
+  ["str_1mm/c1w",    "str_1mm_350K/c1w", "same-length"],
+  ["str_1mm/c1c",    "str_1mm_350K/c1c", "same-length"],
+  ["str_1mm/c1c",    "str_1mm_350K/c3c", "same-length"],
+  ["str_0.42mm/c1w", "str_1mm/c1w",      "cross-length"],
+  ["str_1mm/c1w",    "str_0.42mm/c1w",   "cross-length"],
+  ["str_0.42mm/c1c", "str_1mm/c1c",      "cross-length"],
+  ["str_1mm/c1c",    "str_0.42mm/c1c",   "cross-length"],
+  ["mini_1mm/c1w",   "mini_2mm/c1w",     "cross-length"],
+  ["mini_2mm/c1w",   "mini_1mm/c1w",     "cross-length"],
+  ["mini_1mm/c1c",   "mini_2mm/c1c",     "cross-length"],
+  ["mini_2mm/c1c",   "mini_1mm/c1c",     "cross-length"]
+ ],
+ "eq7_pairs": {
+  "str_dil":  {"warm": ["str_0.42mm/c1w", "str_1mm/c1w"],
+               "cool": ["str_0.42mm/c1c", "str_1mm/c1c"]},
+  "mini_dil": {"warm": ["mini_1mm/c1w", "mini_2mm/c1w"],
+               "cool": ["mini_1mm/c1c", "mini_2mm/c1c"]}
+ },
+ "hysteresis_pairs": [
+  ["str_0.42mm/c1c",   "str_0.42mm/c1w"],
+  ["str_1mm/c1c",      "str_1mm/c1w"],
+  ["str_1mm_350K/c1c", "str_1mm_350K/c1w"],
+  ["str_1mm_350K/c3c", "str_1mm_350K/c3w"],
+  ["mini_1mm/c1c",     "mini_1mm/c1w"],
+  ["mini_2mm/c1c",     "mini_2mm/c1w"]
+ ]
+}

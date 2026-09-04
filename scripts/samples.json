@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "samples": {
+    "EXAMPLE": {
+      "display_name": "EXAMPLE sample (replace with your own; T_C = 100 K)",
+      "L0_cm": [
+        {
+          "value": 0.05,
+          "cell": "str_dil",
+          "source": "EXAMPLE — micrometer measurement, lab notebook p.NN",
+          "confirmed": false
+        },
+        {
+          "value": 0.02,
+          "cell": "mini_dil",
+          "source": "EXAMPLE — filename convention; confirm against lab notes",
+          "confirmed": false
+        }
+      ],
+      "transition_window_K": [90, 110],
+      "default_cell": "str_dil",
+      "cleanup_overrides": {
+        "mini_dil": {
+          "stitch_t_curves": false,
+          "stitch_b_loops": false
+        }
+      },
+      "notes": "EXAMPLE entry showing the schema — replace with your sample. transition_window_K protects a phase transition from cleanup; cleanup_overrides can disable stitching per cell (recommended for mini cells, where jump+recovery pairs can be physical signal rather than instrumental steps)."
+    }
+  }
+}

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.DS_Store
+# measurement data and generated results stay out of the repo
+Data/
+Output/
+report/
+# builder QC output (cu_calibration_builder.py)
+fig_calibration_QC/
