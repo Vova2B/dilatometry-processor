@@ -5,6 +5,12 @@ message: >-
 title: Capacitance Dilatometry Processor
 type: software
 license: MIT
+version: 1.0.0
+date-released: '2026-09-04'
+repository-code: 'https://github.com/Vova2B/dilatometry-processor'
+# Concept DOI, not the 1.0.0 version DOI (10.5281/zenodo.22307138): a citation of the
+# concept always resolves to the newest release, which is what a paper should point at.
+doi: 10.5281/zenodo.22307137
 authors:
   - family-names: Buturlim
     given-names: Volodymyr

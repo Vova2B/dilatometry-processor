@@ -2,6 +2,8 @@
 
 *for Quantum Design PPMS® systems*
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22307137.svg)](https://doi.org/10.5281/zenodo.22307137)
+
 Reduction, quality control, and plotting for **capacitance dilatometry** data
 measured in a Quantum Design PPMS with Küchler-type BeCu dilatometers
 (standard cell: RSI **83**, 095102 (2012); uniaxial-stress cell: RSI **87**,
