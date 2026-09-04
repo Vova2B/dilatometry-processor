@@ -1,0 +1,22 @@
+{
+  "title": "Capacitance Dilatometry Processor",
+  "upload_type": "software",
+  "version": "1.0.0",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Buturlim, Volodymyr",
+      "orcid": "0000-0001-8851-2489"
+    }
+  ],
+  "description": "Reduction, quality control and plotting for capacitance dilatometry measured in a Quantum Design PPMS with Kuchler-type BeCu dilatometers (standard, uniaxial-stress and mini cells). From a raw .dat export it produces referenced thermal expansion dL/L0(T), magnetostriction dL(B) loops, the linear expansion coefficient alpha(T), angle-resolved polar anisotropy figures, and a per-run provenance JSON carrying physical quality gates. Includes an interactive quality-control tool, a Tkinter launcher, headless batch reducers, and a builder that constructs the empty-cell copper background registry from your own calibration runs.",
+  "keywords": [
+    "dilatometry",
+    "thermal expansion",
+    "magnetostriction",
+    "capacitance dilatometer",
+    "condensed matter physics",
+    "materials science",
+    "cryogenics"
+  ]
+}
