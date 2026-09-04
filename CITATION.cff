@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it, and cite the dilatometer-design
+  papers below for the measurement technique.
+title: Capacitance Dilatometry Processor
+type: software
+license: MIT
+authors:
+  - family-names: Buturlim
+    given-names: Volodymyr
+    orcid: https://orcid.org/0000-0001-8851-2489
+references:
+  - type: article
+    title: Compact and miniaturized high-resolution capacitance dilatometer
+    authors: [{family-names: Küchler, given-names: R.}]
+    journal: Review of Scientific Instruments
+    volume: 83
+    year: 2012
+    pages: "095102"
+  - type: article
+    title: Uniaxial stress capacitance dilatometer
+    authors: [{family-names: Küchler, given-names: R.}]
+    journal: Review of Scientific Instruments
+    volume: 87
+    year: 2016
+    pages: "073903"
+  - type: article
+    title: Miniaturized capacitance dilatometer
+    authors: [{family-names: Küchler, given-names: R.}]
+    journal: Review of Scientific Instruments
+    volume: 88
+    year: 2017
+    pages: "083903"
