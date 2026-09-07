@@ -134,6 +134,14 @@ BADGE = {
     "ambiguous": ("#7a5a00", "#fbedc4"),
     "unknown":   ("#7a1f1f", "#f6d9d9"),
 }
+# Shown in the Detection panel until a file is picked. Detection only runs
+# when a path is set, so the panel needs a resting state that tells the user
+# what to do rather than one that claims work is in progress.
+DETECT_IDLE_TEXT = "No file selected — click Browse… (or press Cmd/Ctrl-O)"
+# Light-theme defaults; _apply_theme() re-derives both from the ACTUAL theme
+# background so they stay legible in dark mode. The Treeview row colours below
+# were given explicit fg/bg pairs in July for exactly this reason; these
+# label greys were missed in that pass.
 SECONDARY = "#666666"
 MUTED = "#8a8a8a"
 # Results-tree row colors. Foregrounds are set EXPLICITLY with each
@@ -250,7 +258,12 @@ class DilatApp:
         # Open no taller/wider than the screen (Windows laptops + display
         # scaling otherwise push the Results/QC buttons below the taskbar).
         sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
-        w, h = min(900, sw - 40), min(820, sh - 80)
+        # The form's natural height is ~945 px. The old 820 cap left the Log
+        # pane — where every message, including the first-run "use Browse…"
+        # instruction, is written — entirely below the fold on every laptop.
+        # `sh - 80` is what keeps clear of a taskbar/dock, so raising the
+        # constant only takes space that genuinely exists.
+        w, h = min(900, sw - 40), min(960, sh - 80)
         self.root.geometry(f"{w}x{h}")
         # Small floor; the whole form scrolls, so it never traps content.
         self.root.minsize(560, 420)
@@ -323,9 +336,24 @@ class DilatApp:
                     break
                 except tk.TclError:
                     continue
+        self._tune_greys()
         # A slightly heavier font for section titles reads as grouping.
         self.style.configure("Section.TLabelframe.Label",
                              font=("TkDefaultFont", 11, "bold"))
+
+    def _tune_greys(self):
+        """Pick secondary/muted greys that contrast with the REAL theme
+        background. A dark system theme paints frames near-black, on which the
+        light-mode #666666 is close to unreadable."""
+        global SECONDARY, MUTED
+        try:
+            bg = self.style.lookup("TFrame", "background")
+            r, g, b = (v / 257.0 for v in self.root.winfo_rgb(bg))
+        except (tk.TclError, TypeError, ValueError):
+            return
+        # Rec. 601 luma; <128 is a dark ground and needs LIGHTER greys.
+        if (0.299 * r + 0.587 * g + 0.114 * b) < 128:
+            SECONDARY, MUTED = "#b0b0b0", "#8f8f8f"
 
     # ---- build ---------------------------------------------------------
     def _make_scrollable(self):
@@ -338,8 +366,8 @@ class DilatApp:
         self.root.columnconfigure(0, weight=1)
         self.scroll_canvas = tk.Canvas(self.root, highlightthickness=0)
         self.scroll_canvas.grid(row=0, column=0, sticky="nsew")
-        vbar = ttk.Scrollbar(self.root, orient="vertical",
-                             command=self.scroll_canvas.yview)
+        self.vbar = vbar = ttk.Scrollbar(self.root, orient="vertical",
+                                         command=self.scroll_canvas.yview)
         vbar.grid(row=0, column=1, sticky="ns")
         self.scroll_canvas.configure(yscrollcommand=vbar.set)
         self.body = ttk.Frame(self.scroll_canvas)
@@ -386,6 +414,13 @@ class DilatApp:
         self.scroll_canvas.itemconfigure(
             self._body_id, width=cw, height=max(ch, nat))
         self.scroll_canvas.configure(scrollregion=(0, 0, cw, max(ch, nat)))
+        # The Results tree and the Log carry their own scrollbars; a third,
+        # permanently-visible one at the same edge is just noise when the form
+        # already fits. Show it only when there is something to scroll to.
+        if nat > ch:
+            self.vbar.grid()
+        else:
+            self.vbar.grid_remove()
 
     def _section(self, title, row, weight=0):
         """A titled section frame gridded into the scroll body at `row`.
@@ -417,12 +452,19 @@ class DilatApp:
         det = self._section("Detection (suggestion only)", 1)
         head = ttk.Frame(det)
         head.pack(fill="x", padx=PAD, pady=(PAD // 2, 0))
-        self.detect_values = ttk.Label(head, text="(detecting…)",
+        # Detection only runs when a path is set, so the old "(detecting…)"
+        # placeholder sat there forever on a fresh clone, claiming work was in
+        # progress. This panel is the first thing on screen, so it carries the
+        # first-run instruction — the Log says the same, but the Log starts
+        # below the fold at the default window height.
+        self.detect_values = ttk.Label(head, text=DETECT_IDLE_TEXT,
                                        font=self.mono, anchor="w")
         self.detect_values.pack(side="left")
         self.conf_badge = tk.Label(head, text="", font=("TkDefaultFont", 9, "bold"),
                                    padx=8, pady=1, bd=0)
-        self.conf_badge.pack(side="right")
+        self.conf_badge.pack(side="right", padx=(12, 0))
+        self._badge_idle = (self.conf_badge.cget("background"),
+                            self.conf_badge.cget("foreground"))
         self.detect_guess = ttk.Label(det, text="", anchor="w",
                                       font=("TkDefaultFont", 11))
         self.detect_guess.pack(fill="x", padx=PAD, pady=(2, 0))
@@ -445,8 +487,13 @@ class DilatApp:
         self.cell_combo.bind("<<ComboboxSelected>>", self._on_cell_change)
 
         # ── Rescale offer (row 3, hidden until a mini r_eff~7 mm run) ────────
+        # Parent is self.body, NOT self.root: gridded into root it rendered
+        # outside the scroll canvas, i.e. pinned under the Results table at the
+        # window bottom, nowhere near the Cell dropdown that reveals it (and
+        # permanently stealing height from an already-cramped viewport).
+        # In the body, row 3 is exactly between Cell (2) and parameters (4).
         self.rescale_frame = ttk.LabelFrame(
-            self.root,
+            self.body,
             text="Mis-conversion rescale (suggestion — OFF by default)",
             style="Section.TLabelframe")
         self.rescale_chk = ttk.Checkbutton(
@@ -481,7 +528,10 @@ class DilatApp:
         # A live box here would be a silent no-op — the audited failure mode.
         self.angle_entry = ttk.Entry(line1, textvariable=self.angle_var,
                                      width=6, state="disabled")
-        self.angle_entry.pack(side="left", padx=(4, 0))
+        self.angle_entry.pack(side="left", padx=(4, 4))
+        # Say why it is dead ON the control; a tooltip alone is not discoverable.
+        ttk.Label(line1, text="(from angle_runs.json)", foreground=MUTED,
+                  font=("TkDefaultFont", 9)).pack(side="left")
         _Tooltip(self.angle_entry,
                  "Not an input: str runs ignore angle; mini runs take "
                  "per-angle settings from angle_runs.json.")
@@ -578,11 +628,14 @@ class DilatApp:
         resf.rowconfigure(0, weight=1)
         cols = ("run", "status", "summary")
         self.tree = ttk.Treeview(resf, columns=cols, show="headings",
-                                 height=6, selectmode="browse")
+                                 height=4, selectmode="browse")
         self.tree.heading("run", text="Run")
         self.tree.heading("status", text="Status")
         self.tree.heading("summary", text="Summary")
-        self.tree.column("run", width=150, minwidth=90, stretch=False,
+        # Real mini rotation-series names ("…001 for rot minus45 deg - 102824
+        # - _all.csv") differ only late in the string, so a fixed 150 px column
+        # made exactly the rows a user must tell apart indistinguishable.
+        self.tree.column("run", width=300, minwidth=120, stretch=True,
                          anchor="w")
         self.tree.column("status", width=80, minwidth=64, stretch=False,
                          anchor="center")
@@ -620,8 +673,7 @@ class DilatApp:
             rbtns, text="Plot pre-cleanup",
             command=self._plot_selected_precleanup, state="disabled")
         self.precleanup_btn.pack(side="left", padx=(6, 0))
-        ttk.Label(rbtns, text="select a run → Open QC (double-click) or "
-                  "Plot pre-cleanup (saves _raw png/csv)",
+        ttk.Label(rbtns, text="select a run, or double-click it",
                   foreground=MUTED, font=("TkDefaultFont", 9)).pack(
             side="left", padx=8)
         self._set_results_placeholder()
@@ -634,7 +686,7 @@ class DilatApp:
         ltop.grid(row=0, column=0, sticky="ew", padx=4, pady=(2, 0))
         ttk.Button(ltop, text="Clear", command=self._clear_log, width=7).pack(
             side="right")
-        self.log = scrolledtext.ScrolledText(logf, height=8, wrap="word",
+        self.log = scrolledtext.ScrolledText(logf, height=6, wrap="word",
                                              font=self.mono_sm)
         self.log.grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
 
@@ -996,7 +1048,16 @@ class DilatApp:
                 text="No file selected — Browse… (Cmd/Ctrl-O) to pick a raw "
                      "PPMS .dat or *_all.csv, then Run.")
             self.run_btn.config(state="disabled")
+            # Re-detect has nothing to act on either, and a live button that
+            # does nothing is the failure mode this panel exists to avoid.
+            self.redetect_btn.config(state="disabled")
+            self.detect_values.config(text=DETECT_IDLE_TEXT)
+            self.detect_guess.config(text="")
+            self.conf_badge.config(text="", background=self._badge_idle[0],
+                                   foreground=self._badge_idle[1])
             return
+        if not self.run_status.cget("text"):
+            self.redetect_btn.config(state="normal")
         if str(self.run_btn.cget("state")) == "disabled" and \
                 not self.run_status.cget("text"):
             self.run_btn.config(state="normal")
