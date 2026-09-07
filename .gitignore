@@ -7,3 +7,16 @@ Output/
 report/
 # builder QC output (cu_calibration_builder.py)
 fig_calibration_QC/
+
+# Measurement data by TYPE, not just by folder. The rules above only guard
+# Data/ and Output/; a raw run dropped in the repo root or in scripts/ would
+# otherwise be committed. Negate explicitly for anything that must ship.
+*.dat
+*.raw
+*_all.csv
+*_Tdep*.csv
+*_Bdep*.csv
+*_alpha.csv
+*_provenance.json
+*.xlsx
+!scripts/cu_runs.example.json
