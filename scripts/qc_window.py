@@ -471,14 +471,29 @@ class QCWindow:
         self.fig.canvas.mpl_connect("pick_event", self._on_pick)
 
     def _section_header(self, key, text):
-        """Draw a group header + a thin separator rule above it (fig coords)."""
-        y = self._HDR[key]
-        self.fig.text(self._AX_SEL[0], y, text, fontsize=self._fs(self._FS_HEADER),
-                      fontweight="bold", color="0.4", ha="left", va="bottom")
-        self.fig.add_artist(plt.Line2D(
-            [self._AX_SEL[0], self._AX_SEL[0] + self._AX_SEL[2]],
-            [y + self._sf(0.018)] * 2, color="0.8", lw=0.8,
-            transform=self.fig.transFigure))
+        """Draw a group header (fig coords).
+
+        There used to be a thin full-width rule just above the text. In the
+        panel's real spacing that left each header sandwiched: about 7 px below
+        the rule and only 4 px above the top border of the widget block it
+        labels, so the header read as text resting on a line rather than as a
+        caption belonging to the group beneath it. The widget rectangles
+        already have strong black edges that separate the groups perfectly
+        well, so the extra rule was redundant as well as cramped.
+
+        Dropping it frees that space, and a small lift spends part of it on
+        air between the header and its block. The lift is deliberately small:
+        a header labels the group BELOW it, so it must stay nearer to that
+        group than to the one above. Enough to stop the text touching the
+        block's border, not enough to reassign it to the previous group. In
+        em, so it holds at any figure size and whatever _FS_FLOOR does to the
+        scaled font.
+        """
+        fs = self._fs(self._FS_HEADER)
+        em = fs / (self._figsize[1] * 72.0)
+        self.fig.text(self._AX_SEL[0], self._HDR[key] + 0.25 * em, text,
+                      fontsize=fs, fontweight="bold", color="0.4",
+                      ha="left", va="bottom")
 
     def _build_widgets(self):
         from matplotlib.widgets import (RadioButtons, Slider, TextBox, Button)
