@@ -1,6 +1,11 @@
 numpy>=1.24
 pandas>=2.0
 scipy>=1.10
-# <4 pin: the QC curve selector touches RadioButtons internals (guarded,
-# degrades gracefully) validated on the 3.7-3.10 series
-matplotlib>=3.7,<4
+# Upper pin is <3.11, not <4. Two reasons, both validated on the 3.7-3.10
+# series: the QC curve selector touches RadioButtons internals (guarded, so it
+# degrades gracefully), and 3.11 decorates TextBox._resize with a wrapper that
+# dereferences event.inaxes -- absent on a ResizeEvent -- so every QC window
+# prints one traceback per text box. qc_window._patch_textbox_resize() repairs
+# that at runtime for anyone who installs 3.11+ anyway; this pin is what the
+# project actually tests against.
+matplotlib>=3.7,<3.11

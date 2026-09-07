@@ -14,6 +14,82 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
+def _patch_textbox_resize():
+    """matplotlib 3.11 decorates ``TextBox._resize`` with a wrapper that reads
+    ``event.inaxes``; a ResizeEvent has no such attribute, so every resize (one
+    per TextBox, on the very first draw too) raises AttributeError inside
+    cbook.process. matplotlib swallows it, but it prints a full traceback that
+    dilat_app pipes straight into its Log panel — twelve of them per QC window.
+
+    Re-bind ``_resize`` to a version that skips the reparenting wrapper for
+    events that carry no ``inaxes``. No-op on matplotlib < 3.11, where
+    ``_resize`` is undecorated and has no ``__wrapped__``.
+    """
+    try:
+        from matplotlib.widgets import TextBox
+        outer = TextBox._resize
+        inner = getattr(outer, "__wrapped__", None)
+        if inner is None:                     # < 3.11: nothing to patch
+            return
+        import functools
+
+        @functools.wraps(inner)
+        def _resize(self, event):
+            if not hasattr(event, "inaxes"):  # ResizeEvent: no axes to reparent
+                return inner(self, event)
+            return outer(self, event)
+
+        TextBox._resize = _resize
+    except Exception:                          # never let a cosmetic patch break QC
+        pass
+
+
+_patch_textbox_resize()
+
+
+def _screen_fit_dpi(figsize, base_dpi=None, margin_w=0.92, margin_h=0.86,
+                    min_dpi=60):
+    """Largest dpi <= the default that keeps a ``figsize`` window on the screen.
+
+    The control layout is tuned at 14x7 in; at the module default of 150 dpi
+    that is a 2100x1050 px window — wider than any laptop panel (a 14" MacBook
+    is 1512x982 pt). The entire right-hand control column (trim/smooth sliders,
+    axis limits, Apply to all, Reset, EXPORT) and the toolbar therefore opened
+    off-screen and could not be reached at all.
+
+    dpi is the right lever, not figsize. Font sizes are in POINTS, so lowering
+    dpi keeps every element's FRACTION of the figure exactly as tuned — only
+    the pixel density drops. Shrinking figsize instead makes text relatively
+    larger (``_FS_FLOOR`` stops fonts shrinking past 8 pt), which pushes the
+    section rules through their own headers and clips the y-axis label.
+
+    It must be passed to ``plt.figure(dpi=...)``: setting dpi on an existing
+    figure resizes the canvas height but leaves the window width under TkAgg.
+
+    The interactive figure is never saved — EXPORT re-plots through
+    ``plot_temperature_dep`` / ``plot_field_dep``, which build their own
+    figures and pass ``dpi=200`` — so exported artifacts are unaffected.
+
+    Returns the default dpi on any failure, headless use included, and whenever
+    the window already fits.
+    """
+    if base_dpi is None:
+        base_dpi = float(plt.rcParams.get("figure.dpi", 100.0) or 100.0)
+    try:
+        import tkinter as _tk
+        root = _tk.Tk()
+        root.withdraw()
+        sw, sh = int(root.winfo_screenwidth()), int(root.winfo_screenheight())
+        root.destroy()
+    except Exception:
+        return base_dpi
+    w_in, h_in = float(figsize[0]), float(figsize[1])
+    if sw <= 0 or sh <= 0 or w_in <= 0 or h_in <= 0:
+        return base_dpi
+    fitted = min(base_dpi, margin_w * sw / w_in, margin_h * sh / h_in)
+    return max(min_dpi, fitted)
+
 def _style_axes(ax):
     for sp in ax.spines.values():
         sp.set_linewidth(1.5)
@@ -326,7 +402,10 @@ class QCWindow:
         self.angle_deg  = angle_deg
         self.out_prefix = out_prefix
         self._figsize   = figsize     # (w, h) inches; default matches the
-                                       # original hardcoded window size
+                                      # original hardcoded window size
+        # Screen-fitted render density; see _screen_fit_dpi. figsize itself is
+        # untouched, so _scale stays 1.0 and the tuned layout is preserved.
+        self._fig_dpi   = _screen_fit_dpi(self._figsize)
         self.sel_idx    = 0           # index of selected curve
         self._updating  = False       # guard: suppress callbacks during programmatic updates
         self.exported   = False
@@ -374,7 +453,8 @@ class QCWindow:
         kind_label = "T-dep (x=T)" if self.kind == "T" else "B-dep (x=B)"
         self._scale = min(self._figsize[0] / self._REF_W,
                           self._figsize[1] / self._REF_H)
-        self.fig = plt.figure(figsize=self._figsize)
+        self.fig = plt.figure(figsize=self._figsize,
+                              dpi=self._fig_dpi)
         fname = os.path.basename(self.out_prefix)
         self.fig.canvas.manager.set_window_title(
             f"QC [{fname}] — {kind_label}  |  θ={self.angle_deg:+d}°")
