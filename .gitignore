@@ -19,4 +19,7 @@ fig_calibration_QC/
 *_alpha.csv
 *_provenance.json
 *.xlsx
-!scripts/cu_runs.example.json
+# NOTE: these are broad on purpose. To ship an example that matches one
+# of them, negate it explicitly here AND `git add -f` it once -- e.g.
+# `!examples/demo_all.csv`. (scripts/cu_runs.example.json matches none
+# of the patterns above, so it needs no negation.)

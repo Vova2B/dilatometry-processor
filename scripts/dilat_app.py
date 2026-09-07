@@ -142,8 +142,9 @@ DETECT_IDLE_TEXT = "No file selected — click Browse… (or press Cmd/Ctrl-O)"
 # background so they stay legible in dark mode. The Treeview row colours below
 # were given explicit fg/bg pairs in July for exactly this reason; these
 # label greys were missed in that pass.
-SECONDARY = "#666666"
-MUTED = "#8a8a8a"
+_LIGHT_GREYS = ("#666666", "#8a8a8a")
+_DARK_GREYS = ("#b0b0b0", "#8f8f8f")
+SECONDARY, MUTED = _LIGHT_GREYS
 # Results-tree row colors. Foregrounds are set EXPLICITLY with each
 # background: without them a dark-mode system supplies LIGHT text on these
 # light pastels — unreadable (live smoke-test feedback 2026-07-09).
@@ -352,8 +353,10 @@ class DilatApp:
         except (tk.TclError, TypeError, ValueError):
             return
         # Rec. 601 luma; <128 is a dark ground and needs LIGHTER greys.
-        if (0.299 * r + 0.587 * g + 0.114 * b) < 128:
-            SECONDARY, MUTED = "#b0b0b0", "#8f8f8f"
+        # Assign BOTH ways: lightening only would leave these globals stuck on
+        # the dark values for any later instance built under a light theme.
+        dark = (0.299 * r + 0.587 * g + 0.114 * b) < 128
+        SECONDARY, MUTED = _DARK_GREYS if dark else _LIGHT_GREYS
 
     # ---- build ---------------------------------------------------------
     def _make_scrollable(self):

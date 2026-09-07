@@ -49,7 +49,7 @@ _patch_textbox_resize()
 
 
 def _screen_fit_dpi(figsize, base_dpi=None, margin_w=0.92, margin_h=0.86,
-                    min_dpi=60):
+                    min_dpi=40):
     """Largest dpi <= the default that keeps a ``figsize`` window on the screen.
 
     The control layout is tuned at 14x7 in; at the module default of 150 dpi
@@ -88,6 +88,10 @@ def _screen_fit_dpi(figsize, base_dpi=None, margin_w=0.92, margin_h=0.86,
     if sw <= 0 or sh <= 0 or w_in <= 0 or h_in <= 0:
         return base_dpi
     fitted = min(base_dpi, margin_w * sw / w_in, margin_h * sh / h_in)
+    # The floor only guards against a degenerate value; it is deliberately low
+    # enough not to re-create the problem it exists to solve. A floor of 60
+    # still produced an 840 px window on an 800 px screen -- controls back off
+    # the edge, which is worse than small text on a display that size.
     return max(min_dpi, fitted)
 
 def _style_axes(ax):
