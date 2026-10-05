@@ -25,6 +25,18 @@ pip install -r scripts/requirements.txt
 Tkinter (bundled with python.org installers; `python3-tk` on Debian/Ubuntu)
 is needed only for the GUI launcher.
 
+**No Python, an older one, or no internet?** Download a portable bundle from the
+[latest release](https://github.com/Vova2B/dilatometry-processor/releases/latest).
+It carries its own Python and every library inside the folder, so there is
+nothing to install, no network is needed, and it cannot disturb a Python that
+other instrument software on the machine depends on. Unzip it and run
+`run_app.bat` (Windows) or `run_app.command` (macOS).
+
+Python 3.9 and earlier are not supported — `argparse.BooleanOptionalAction`,
+which the reducers use, does not exist before 3.9, and the tested floor is 3.10.
+On an older interpreter the tool now says so and stops, instead of failing later
+with an error that points somewhere else.
+
 The full user guide — install variants (incl. fully offline machines), every
 workflow, troubleshooting — is `docs/guide.html` (open in any browser).
 
