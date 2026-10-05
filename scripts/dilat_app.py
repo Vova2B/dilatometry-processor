@@ -68,6 +68,7 @@ import tkinter as tk
 from tkinter import filedialog, font as tkfont, messagebox, ttk, scrolledtext
 
 import cells     # pure-stdlib parameter data (safe under the GUI interpreter)
+import pyreq     # pure-stdlib interpreter floor (shared with the reducers)
 import samples   # pure-stdlib samples.json loader
 
 HERE = os.path.dirname(os.path.abspath(__file__))          # scripts/
@@ -198,21 +199,38 @@ def pick_writable_out_base(data_folder):
 
 
 def find_science_python():
-    """First candidate interpreter that can import numpy+pandas, else None."""
-    seen = set()
+    """First candidate interpreter that can actually run the workers.
+
+    Returns (path, note). An interpreter that HAS numpy and pandas but is
+    older than the supported floor used to be selected here and then failed
+    at Run time, deep inside argparse; it is rejected up front instead. When
+    nothing qualifies, `note` says which of the two problems it was, because
+    the fix differs.
+    """
+    seen, too_old = set(), []
     for cand in SCIENCE_CANDIDATES:
         if not cand or cand in seen:
             continue
         seen.add(cand)
         try:
-            r = subprocess.run([cand, "-c", "import numpy, pandas"],
+            r = subprocess.run([cand, "-c", pyreq.probe_code()],
                                capture_output=True, timeout=30,
                                **POPEN_NOWINDOW)
-            if r.returncode == 0:
-                return cand
         except (OSError, subprocess.SubprocessError):
             continue
-    return None
+        if r.returncode == 0:
+            return cand, ""
+        if r.returncode == pyreq.EXIT_UNSUPPORTED_PYTHON:
+            found = (r.stdout or b"").decode("ascii", "replace").strip()
+            too_old.append((cand, found or "an older version"))
+    need = ".".join(str(n) for n in pyreq.MIN_PYTHON)
+    if too_old:
+        cand, found = too_old[0]
+        return None, ("found Python %s at %s, but %s or newer is required. "
+                      "Use the portable bundle, which carries its own Python, "
+                      "or install a newer one." % (found, cand, need))
+    return None, ("no interpreter with numpy/pandas found (Python %s or "
+                  "newer is required)." % need)
 
 
 def _pick_mono_family(root):
@@ -272,7 +290,7 @@ class DilatApp:
         self.mono = (_pick_mono_family(root), 11)
         self.mono_sm = (self.mono[0], 10)
 
-        self.science_py = find_science_python()
+        self.science_py, self.science_note = find_science_python()
         # Preload the default run only if it exists on this machine; on a
         # fresh clone start blank and point the user at Browse instead.
         self.selected_path = tk.StringVar(
@@ -713,8 +731,8 @@ class DilatApp:
             self._log(f"samples.json: {n} sample(s) loaded "
                       f"({', '.join(self.samples_reg['samples']) or 'none'}).")
         if not self.science_py:
-            self._log("WARNING: no interpreter with numpy/pandas found; "
-                      "detection, Run and Open-QC will fail.")
+            self._log("WARNING: " + self.science_note
+                      + "\nDetection, Run and Open-QC will not work.")
         # Initialise the toggle defaults + L0 for the opening cell/sample.
         self._refresh_toggles()
 
