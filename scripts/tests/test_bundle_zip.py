@@ -3,6 +3,8 @@ it has to be compressed — and it has to keep the launcher executable."""
 import os
 import stat
 import sys
+
+import pytest
 import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -44,6 +46,9 @@ def test_compression_actually_shrinks_the_payload(tmp_path):
     assert os.path.getsize(zpath) < raw / 2
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Windows has no POSIX mode bits: "
+                    "chmod(0o755) is a no-op there, so this property cannot "
+                    "hold. The bundles are built on macOS, where it must.")
 def test_launcher_keeps_its_executable_bit(tmp_path):
     """The reason the writer uses ZipInfo at all — do not regress it while
     fixing the compression."""
