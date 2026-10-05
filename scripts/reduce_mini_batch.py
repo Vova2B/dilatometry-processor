@@ -40,6 +40,12 @@ for _s in (_sys.stdout, _sys.stderr):
     except (AttributeError, ValueError):
         pass
 
+# The interpreter floor, checked BEFORE the science imports below: on an old
+# Python those fail first, with an error that points at numpy instead of at
+# the real cause. See pyreq.py.
+import pyreq
+pyreq.require("reduce_mini_batch.py")
+
 
 import numpy as np
 import pandas as pd
