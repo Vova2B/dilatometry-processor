@@ -133,6 +133,32 @@ def _version_stamp():
     return "unversioned"
 
 
+def write_bundle_zip(bundle, zpath, root_dir):
+    """Zip `bundle` into `zpath`, with paths relative to `root_dir`.
+
+    Two things have to hold at once, and they pull against each other.
+    Entries are written through an explicit ZipInfo so the Unix mode survives
+    — without it the macOS `run_app.command` arrives without its executable
+    bit and will not launch. But `writestr(zinfo, ...)` honours
+    `zinfo.compress_type`, NOT the compression passed to ZipFile(), and
+    `ZipInfo.from_file()` leaves that at ZIP_STORED. Setting the compression
+    on the archive alone therefore does nothing, silently: the bundle still
+    zips, just three times larger than it should (476 MB rather than ~150 MB
+    for windows-x64). Set it per entry.
+    """
+    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as zf:
+        for root, _dirs, files in os.walk(bundle):
+            for fn in sorted(files):
+                p = os.path.join(root, fn)
+                arc = os.path.relpath(p, root_dir).replace(os.sep, "/")
+                zi = zipfile.ZipInfo.from_file(p, arc)
+                zi.compress_type = zipfile.ZIP_DEFLATED
+                zi.external_attr = (os.stat(p).st_mode & 0xFFFF) << 16
+                with open(p, "rb") as src:
+                    zf.writestr(zi, src.read())
+    return zpath
+
+
 def _write_third_party_licenses(bundle, pydir, out_path=None):
     """THIRD-PARTY-LICENSES.txt at the bundle root: a pointer to every
     licence file pip installed under site-packages/*.dist-info/ (they ship
@@ -274,15 +300,7 @@ def build(target, make_zip):
     if make_zip:
         zpath = bundle + ".zip"
         print(f"zipping -> {zpath} (takes a minute)")
-        with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as zf:
-            for root, _dirs, files in os.walk(bundle):
-                for fn in files:
-                    p = os.path.join(root, fn)
-                    arc = os.path.relpath(p, BUNDLES).replace(os.sep, "/")
-                    zi = zipfile.ZipInfo.from_file(p, arc)
-                    zi.external_attr = (os.stat(p).st_mode & 0xFFFF) << 16
-                    with open(p, "rb") as src:
-                        zf.writestr(zi, src.read())
+        write_bundle_zip(bundle, zpath, BUNDLES)
         print(f"zip size: {os.path.getsize(zpath) / 1e6:.0f} MB")
 
     print(f"\nbundle ready: {bundle}")
